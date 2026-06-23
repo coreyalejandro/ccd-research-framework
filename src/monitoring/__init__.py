@@ -1,1 +1,1 @@
-"""CCD Research Framework - src.monitoring package"""
+"""CCD monitoring package"""
