@@ -1,1 +1,1 @@
-"""CCD Research Framework - tests.test_privacy package"""
+"""Tests for privacy module"""
