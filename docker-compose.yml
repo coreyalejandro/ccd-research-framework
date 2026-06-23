@@ -1,0 +1,70 @@
+# Docker Compose for CCD Research Framework
+# Orchestrates multiple services for complete deployment
+
+version: '3.8'
+
+services:
+  # Main CCD detector service
+  ccd-detector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ccd-detector
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./config:/app/config
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - SLA_DETECTION_MS=100
+      - SLA_END_TO_END_MS=2000
+    networks:
+      - ccd-network
+    restart: unless-stopped
+
+  # Dashboard service (vendor transparency)
+  ccd-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ccd-dashboard
+    command: python -m src.dashboard.vendor_transparency
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+    environment:
+      - DASHBOARD_PORT=8000
+      - DASHBOARD_HOST=0.0.0.0
+    networks:
+      - ccd-network
+    depends_on:
+      - ccd-detector
+    restart: unless-stopped
+
+  # Monitoring service (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ccd-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - ccd-network
+    restart: unless-stopped
+
+networks:
+  ccd-network:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+
+# Made with Bob
